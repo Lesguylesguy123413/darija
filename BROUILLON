@@ -1,0 +1,136 @@
+import React, { useState, useEffect } from 'react';
+import { Plus, Trash2, Edit2, Shuffle, Check, X } from 'lucide-react';
+
+// --- DICTIONNAIRE POUR LES CATÉGORIES INTELLIGENTES ---
+const SMART_VOCAB = {
+  "cuisine": [
+    { fr: "Cuillère", lat: "M3alga", ar: "معلقة" },
+    { fr: "Fourchette", lat: "Forscheta", ar: "فرشيطة" },
+    { fr: "Pain", lat: "Khobz", ar: "خبز" },
+    // ... (Tu peux en ajouter jusqu'à 50 ici)
+  ],
+  "voyage": [
+    { fr: "Valise", lat: "Baliza", ar: "باليزة" },
+    { fr: "Train", lat: "Tran", ar: "تران" },
+  ]
+};
+
+const App = () => {
+  const [cards, setCards] = useState([]);
+  const [categories, setCategories] = useState(["Général"]);
+  const [activeTab, setActiveTab] = useState('quizz');
+  const [onlyDarija, setOnlyDarija] = useState(false); // Action 2
+  const [showPlusMenu, setShowPlusMenu] = useState(false); // Action 3
+
+  // --- ACTION 1: ÉDITION DES CATÉGORIES ---
+  const renameCategory = (oldName, newName) => {
+    if (!newName || categories.includes(newName)) return;
+    setCategories(categories.map(c => c === oldName ? newName : c));
+    setCards(cards.map(card => card.category === oldName ? { ...card, category: newName } : card));
+  };
+
+  const deleteCategory = (catName) => {
+    if (window.confirm(`Supprimer la catégorie "${catName}" et ses cartes ?`)) {
+      setCategories(categories.filter(c => c !== catName));
+      setCards(cards.filter(card => card.category !== catName));
+    }
+  };
+
+  // --- ACTION 3: INJECTION INTELLIGENTE ---
+  const addSmartCategory = () => {
+    const keyword = prompt("Entrez un mot-clé (ex: cuisine, voyage) :").toLowerCase();
+    if (SMART_VOCAB[keyword]) {
+      const newCat = keyword.charAt(0).toUpperCase() + keyword.slice(1);
+      if (!categories.includes(newCat)) setCategories([...categories, newCat]);
+      
+      const newCards = SMART_VOCAB[keyword].map(item => ({
+        id: Date.now() + Math.random(),
+        french: item.fr,
+        latin: item.lat,
+        darija: item.ar,
+        category: newCat
+      }));
+      setCards([...cards, ...newCards]);
+      alert(`${newCards.length} mots injectés !`);
+    } else {
+      alert("Mot-clé non trouvé. Essayez 'cuisine' ou 'voyage'.");
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 pb-20">
+      {/* ... (Reste du header) ... */}
+
+      {/* ONGLET ÉDITION (Action 1) */}
+      {activeTab === 'edition' && (
+        <div className="p-4">
+          <h2 className="text-xl font-bold mb-4">Gérer les catégories 📂</h2>
+          {categories.map(cat => (
+            <div key={cat} className="flex items-center justify-between bg-white p-3 mb-2 rounded shadow">
+              <span>{cat}</span>
+              <div className="flex gap-2">
+                <button onClick={() => renameCategory(cat, prompt("Nouveau nom :", cat))} className="p-2 text-blue-500">
+                  <Edit2 size={18} />
+                </button>
+                <button onClick={() => deleteCategory(cat)} className="p-2 text-red-500">
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            </div>
+          ))}
+          {/* ... (Interface d'édition des cartes existante) ... */}
+        </div>
+      )}
+
+      {/* ONGLET QUIZZ (Action 2) */}
+      {activeTab === 'quizz' && (
+        <div className="flex flex-col items-center p-4">
+          {/* ... (Composant Flashcard existant) ... */}
+          {/* Logique d'affichage dans la carte : 
+              {flipped && (
+                <div className="text-center">
+                  {!onlyDarija && <p className="text-gray-500">{currentCard.latin}</p>}
+                  <p className="text-2xl font-bold">{currentCard.darija}</p>
+                </div>
+              )}
+          */}
+          
+          <div className="mt-4 flex flex-col items-center gap-4">
+            <button className="bg-blue-500 text-white px-6 py-2 rounded-full flex items-center gap-2">
+              <Shuffle size={18} /> Shuffle
+            </button>
+
+            {/* BOUTON ج (Action 2) */}
+            <button 
+              onClick={() => setOnlyDarija(!onlyDarija)}
+              className={`w-12 h-12 rounded-full border-2 flex items-center justify-center text-xl font-bold transition-colors
+                ${onlyDarija ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-800 border-gray-300'}`}
+            >
+              ج
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MENU + (Action 3) */}
+      <div className="fixed bottom-6 right-6 flex flex-col-reverse items-end gap-3">
+        <button 
+          onClick={() => setShowPlusMenu(!showPlusMenu)}
+          className="bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 transition-transform"
+        >
+          <Plus size={24} className={showPlusMenu ? "rotate-45" : ""} />
+        </button>
+
+        {showPlusMenu && (
+          <div className="flex flex-col gap-2 mb-2">
+            <button onClick={() => { /* Logique Ajout Carte */ }} className="bg-white px-4 py-2 rounded shadow text-sm font-medium">✨ Nouvelle Carte</button>
+            <button onClick={() => { /* Logique Ajout Catégorie */ }} className="bg-white px-4 py-2 rounded shadow text-sm font-medium">📂 Nouvelle Catégorie</button>
+            <button onClick={addSmartCategory} className="bg-blue-500 text-white px-4 py-2 rounded shadow text-sm font-medium">🧠 Catégorie Intelligente</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default App;
