@@ -10,45 +10,35 @@
 <body>
 <div id="root">
 
-<!-- ═══════════════════════════════════
-     ONGLET QUIZ
-════════════════════════════════════ -->
+<!-- ═══ QUIZ ═══ -->
 <div class="scr on" id="scr-quiz">
   <div class="hd">
     <h1>دارجة · Darija</h1>
     <span class="hd-sub">Fès</span>
-    <div class="hd-r">
-      <button class="sm-btn" id="sync-btn">⇅ Sync</button>
-    </div>
+    <div class="hd-r"><button class="sm-btn" id="sync-btn">⇅ Sync</button></div>
   </div>
 
-  <!-- Barre de catégories -->
   <div class="cats-wrap">
     <div class="cats collapsed" id="quiz-cats"></div>
     <div style="display:flex;gap:4px;align-items:center">
       <button class="cats-toggle" id="cats-toggle-btn">▼ Voir toutes</button>
-      <button class="cat-add-btn" id="open-cat-mo" title="Nouvelle catégorie">＋</button>
     </div>
   </div>
 
-  <!-- Progression -->
   <div class="pr">
     <div class="pt"><div class="pf" id="pf"></div></div>
     <span class="pc" id="pc"></span>
   </div>
 
-  <!-- Indicateurs swipe -->
   <div class="swh">
     <span class="swh-l">← À revoir</span>
     <span class="swh-r">Je sais →</span>
   </div>
 
-  <!-- Scène (flashcard) -->
   <div class="scene" id="sc">
     <div class="ci" id="ci"></div>
     <div class="sol k" id="slk">Je sais ✓</div>
     <div class="sol r" id="slr">À revoir</div>
-    <!-- Boutons micro + play (isolés du swipe via #scene-btns) -->
     <div class="scene-btns" id="scene-btns">
       <button class="btn-play-wrap no-rec" id="btn-play" title="Pas encore enregistré">
         <svg id="ico-play" width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -67,8 +57,8 @@
     </div>
   </div>
 
-  <!-- Hint + navigation -->
   <div class="hint" id="hint"></div>
+
   <div class="nav">
     <button class="nb" id="pbb">&#8592;</button>
     <button class="shb" id="shufb">
@@ -79,16 +69,23 @@
     </button>
     <button class="nb" id="nbb">&#8594;</button>
   </div>
+
+  <!-- Bouton ج sous le shuffle -->
+  <div class="nav-row2">
+    <button class="arabe-btn" id="arabe-btn" title="Afficher uniquement l'écriture arabe">ج</button>
+  </div>
+
   <div class="kbd">Espace = retourner · ← → naviguer · K = je sais · J = à revoir</div>
 </div>
 
-<!-- ═══════════════════════════════════
-     ONGLET ÉDITION
-════════════════════════════════════ -->
+<!-- ═══ ÉDITION ═══ -->
 <div class="scr" id="scr-edit">
   <div class="hd">
     <h1>Édition</h1>
     <span class="hd-sub" id="edit-ctr"></span>
+    <div class="edit-hd-r">
+      <button class="edit-cats-btn" id="edit-cats-btn">⚙️ Catégories</button>
+    </div>
   </div>
   <div class="srch-w">
     <span class="srch-ico">⌕</span>
@@ -98,45 +95,45 @@
   <div id="edit-list"></div>
 </div>
 
-<!-- ═══════════════════════════════════
-     ONGLET RESSOURCES
-════════════════════════════════════ -->
+<!-- ═══ RESSOURCES ═══ -->
 <div class="scr" id="scr-res">
   <div class="hd">
     <h1>Ressources</h1>
     <span class="hd-sub">Darija en ligne</span>
-    <div class="hd-r">
-      <button class="sm-btn" id="res-edit-toggle">✏️ Éditer</button>
-    </div>
+    <div class="hd-r"><button class="sm-btn" id="res-edit-toggle">✏️ Éditer</button></div>
   </div>
   <div id="res-body"></div>
 </div>
 
-<!-- ═══════════════════════════════════
-     TABBAR
-════════════════════════════════════ -->
+<!-- ═══ TABBAR ═══ -->
 <div id="tabbar">
   <button class="tab on" data-t="quiz"><span class="t-ico">🃏</span><span class="t-lbl">Quiz</span></button>
   <button class="tab" data-t="edit"><span class="t-ico">✏️</span><span class="t-lbl">Édition</span></button>
   <button class="tab" data-t="res"><span class="t-ico">🔗</span><span class="t-lbl">Ressources</span></button>
 </div>
 
-<!-- FABs -->
+<!-- FAB quiz + mini-menu -->
+<div class="fab-menu" id="fab-menu">
+  <div class="fab-item" id="fab-smart-cat">
+    <span class="fab-item-ico">✨</span>Catégorie intelligente
+  </div>
+  <div class="fab-item" id="fab-new-cat">
+    <span class="fab-item-ico">📁</span>Nouvelle catégorie
+  </div>
+  <div class="fab-item" id="fab-new-card">
+    <span class="fab-item-ico">🃏</span>Nouvelle carte
+  </div>
+</div>
 <button class="fab" id="fab-quiz">+</button>
 <button class="fab hidden" id="fab-res">🔧</button>
 
-<!-- ═══════════════════════════════════
-     MODALES
-════════════════════════════════════ -->
+<!-- ═══ MODALES ═══ -->
 
-<!-- Modale : Nouvelle / Modifier carte -->
+<!-- Modale carte -->
 <div class="mo" id="card-mo">
   <div class="mo-box">
     <div class="mo-pull"></div>
-    <div class="mo-hd">
-      <h2 id="cmo-title">Nouvelle carte</h2>
-      <button class="mo-x" id="cmo-close">✕</button>
-    </div>
+    <div class="mo-hd"><h2 id="cmo-title">Nouvelle carte</h2><button class="mo-x" id="cmo-close">✕</button></div>
     <div class="mo-body">
       <div class="mz frz"><div class="mz-l">Français</div><textarea class="mz-ta" id="cmo-fr" placeholder="Expression en français…" rows="3"></textarea></div>
       <div class="mz dz"><div class="mz-l">Darija</div><textarea class="mz-ta" id="cmo-d" placeholder="Translittération darija…" rows="2"></textarea><textarea class="mz-ta ar" id="cmo-a" placeholder="عربي (optionnel)…" rows="2"></textarea></div>
@@ -150,14 +147,11 @@
   </div>
 </div>
 
-<!-- Modale : Nouveau / Modifier ressource -->
+<!-- Modale ressource -->
 <div class="mo" id="res-mo">
   <div class="mo-box" style="max-height:68vh">
     <div class="mo-pull"></div>
-    <div class="mo-hd">
-      <h2 id="rmo-title">Nouveau lien</h2>
-      <button class="mo-x" id="rmo-close">✕</button>
-    </div>
+    <div class="mo-hd"><h2 id="rmo-title">Nouveau lien</h2><button class="mo-x" id="rmo-close">✕</button></div>
     <div class="rmo-body">
       <div class="rmo-f"><div class="rmo-l">Titre</div><input class="rmo-inp" id="rmo-name" placeholder="Nom du site ou podcast…"></div>
       <div class="rmo-f"><div class="rmo-l">URL</div><input class="rmo-inp" id="rmo-url" placeholder="https://…" type="url"></div>
@@ -172,36 +166,30 @@
   </div>
 </div>
 
-<!-- Modale : Synchronisation -->
+<!-- Modale sync -->
 <div class="mo" id="sync-mo">
   <div class="mo-box" style="max-height:60vh">
     <div class="mo-pull"></div>
-    <div class="mo-hd">
-      <h2>Synchronisation</h2>
-      <button class="mo-x" id="smo-close">✕</button>
-    </div>
+    <div class="mo-hd"><h2>Synchronisation</h2><button class="mo-x" id="smo-close">✕</button></div>
     <div class="sync-body">
-      <p class="sync-info">Progression sauvegardée <strong>automatiquement</strong> dans ce navigateur. Pour synchroniser avec un autre appareil :</p>
+      <p class="sync-info">Progression sauvegardée <strong>automatiquement</strong> dans ce navigateur.</p>
       <div class="sync-btns">
         <button class="sync-btn" id="smo-export">⬇️ Exporter sans audios<span>Fichier JSON léger · cartes, progression, ressources</span></button>
-        <button class="sync-btn" id="smo-export-audio">⬇️ Exporter avec audios<span>Inclut vos enregistrements vocaux · fichier plus lourd</span></button>
-        <label class="sync-btn" style="cursor:pointer">⬆️ Importer des données<span>Charge un fichier JSON exporté depuis un autre appareil</span><input type="file" accept=".json" id="smo-import-inp" style="display:none"></label>
+        <button class="sync-btn" id="smo-export-audio">⬇️ Exporter avec audios<span>Inclut vos enregistrements vocaux</span></button>
+        <label class="sync-btn" style="cursor:pointer">⬆️ Importer des données<span>Charge un fichier JSON exporté</span><input type="file" accept=".json" id="smo-import-inp" style="display:none"></label>
         <button class="sync-btn danger" id="smo-reset">⚠️ Réinitialiser toutes les données<span>Efface la progression, cartes perso et ressources ajoutées</span></button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Modale : Catégories personnalisées -->
+<!-- Modale créer catégorie -->
 <div class="mo" id="cat-mo">
   <div class="mo-box" style="max-height:72vh">
     <div class="mo-pull"></div>
-    <div class="mo-hd">
-      <h2>Mes catégories</h2>
-      <button class="mo-x" id="catmo-close">✕</button>
-    </div>
+    <div class="mo-hd"><h2>Nouvelle catégorie</h2><button class="mo-x" id="catmo-close">✕</button></div>
     <div class="catmo-body">
-      <div class="catmo-f"><div class="catmo-l">Nom de la catégorie</div><input class="catmo-inp" id="catmo-name" placeholder="ex : Voyage, Argot…" autocomplete="off"></div>
+      <div class="catmo-f"><div class="catmo-l">Nom</div><input class="catmo-inp" id="catmo-name" placeholder="ex : Voyage, Argot…" autocomplete="off"></div>
       <div class="catmo-f"><div class="catmo-l">Couleur</div><div class="color-chips" id="catmo-colors"></div></div>
       <button class="btn-s" id="catmo-add" style="margin-top:.1rem">Créer</button>
       <div id="catmo-list" class="custom-cat-list"></div>
@@ -209,21 +197,43 @@
   </div>
 </div>
 
+<!-- Modale édition catégories (toutes) -->
+<div class="mo" id="edit-cat-mo">
+  <div class="mo-box" style="max-height:82vh">
+    <div class="mo-pull"></div>
+    <div class="mo-hd"><h2>Gérer les catégories</h2><button class="mo-x" id="edit-cat-close">✕</button></div>
+    <div class="edit-cat-body" id="edit-cat-list"></div>
+  </div>
+</div>
+
+<!-- Modale catégorie intelligente -->
+<div class="mo" id="smart-cat-mo">
+  <div class="mo-box" style="max-height:72vh">
+    <div class="mo-pull"></div>
+    <div class="mo-hd"><h2>✨ Catégorie intelligente</h2><button class="mo-x" id="scat-close">✕</button></div>
+    <div class="scat-body">
+      <div class="scat-f">
+        <div class="scat-l">Nom de la catégorie</div>
+        <input class="scat-inp" id="scat-name" placeholder="ex : Au restaurant, Chez le médecin…" autocomplete="off">
+      </div>
+      <div class="scat-f">
+        <div class="scat-l">Mot-clé thématique</div>
+        <input class="scat-inp" id="scat-keyword" placeholder="ex : nourriture, famille, transports…" autocomplete="off">
+        <p class="scat-hint" style="margin-top:4px">Claude va générer ~50 cartes darija autour de ce thème.</p>
+      </div>
+      <p class="scat-status" id="scat-status"></p>
+      <button class="btn-s" id="scat-generate">✨ Générer les cartes</button>
+    </div>
+  </div>
+</div>
+
 </div><!-- #root -->
 
-<!-- ═══════════════════════════════════
-     SCRIPTS (ordre requis)
-     1. data.js    — données statiques
-     2. audio.js   — enregistrement vocal
-     3. core.js    — logique métier
-     4. render.js  — rendu UI
-     5. app.js     — init + event bindings
-════════════════════════════════════ -->
+<!-- Scripts (ordre requis) -->
 <script src="data.js"></script>
 <script src="audio.js"></script>
 <script src="core.js"></script>
 <script src="render.js"></script>
 <script src="app.js"></script>
-
 </body>
 </html>
