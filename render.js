@@ -1,11 +1,10 @@
 // ============================================================
-// render.js [MODIFIABLE avec précaution]
-// Contient : renderQuiz, renderEdit, renderRes, bindResDrag
-// Dépend de : core.js, audio.js, data.js
-// ── Règle critique : setF doit toujours exister après renderQuiz
+// render.js
+// v9.1 — Mode arabeOnly : masque .fdar et .fpro sur face darija
 // ============================================================
 
-// ── renderQuiz ──
+// arabeOnly est défini dans app.js
+
 function renderQuiz() {
   const all = allCards();
   const unkSet = new Set(S.unk);
@@ -13,7 +12,6 @@ function renderQuiz() {
   const knowsSet = new Set(S.knows || []);
   const cm = getCM();
 
-  // Catégories
   let ch = `<button class="cat${S.af === 'all' ? ' on' : ''}" onclick="setF('all')">Toutes (${all.length})</button>`;
   for (const [k, v] of Object.entries(cm)) {
     const cnt = all.filter(x => x.cat === k).length;
@@ -43,8 +41,7 @@ function renderQuiz() {
     document.getElementById('pbb').disabled = true;
     document.getElementById('nbb').disabled = true;
     document.getElementById('hint').textContent = '';
-    updateSceneBtns();
-    return;
+    updateSceneBtns(); return;
   }
 
   const c = pool[cur], m = cm[c.cat] || cm.autres, isA = c.cat === 'alphabet', isFR = sd === 'fr';
@@ -53,23 +50,33 @@ function renderQuiz() {
   const bdg = `<span class="fbdg" style="background:${m.bg};color:${m.c}">${m.l}</span>`;
   const bFAV = `<button class="ffav${isFav ? ' on' : ''}" data-fav="${c.id}" title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${isFav ? '⭐' : '☆'}</button>`;
 
+  // Construction des faces avec mode arabeOnly
+  // arabeOnly : sur la face darija, on masque .fdar (translittération) et .fpro
+  const darB = `<div class="flbl">Darija · Arabe</div>`;
+  const proLine = arabeOnly ? '' : `<p class="fpro">[ ${c.p} ]</p>`;
+  const darLine = arabeOnly ? '' : `<p class="fdar">${c.d}</p>`;
+  const alpLine = arabeOnly ? '' : `<p class="fdar">${c.d}</p>`;
+
   let fB, bB;
   if (isFR) {
     fB = `<div class="flbl">Français</div>${dot}${bdg}<p class="fmain${isA ? ' it' : ''}">${c.fr}</p>${bFAV}`;
-    bB = isA
-      ? `<div class="flbl">Darija · Arabe</div>${bdg}<p class="falp">${c.a}</p><p class="fdar">${c.d}</p><p class="fpro">[ ${c.p} ]</p>${c.n ? `<p class="fnot">${c.n}</p>` : ''}${bFAV}`
-      : `<div class="flbl">Darija · Arabe</div>${bdg}<p class="fdar">${c.d}</p>${c.a ? `<p class="farb">${c.a}</p>` : ''}<p class="fpro">[ ${c.p} ]</p>${c.n ? `<p class="fnot">${c.n}</p>` : ''}${bFAV}`;
+    if (isA) {
+      bB = `${darB}${bdg}<p class="falp">${c.a}</p>${alpLine}${proLine}${c.n ? `<p class="fnot">${c.n}</p>` : ''}${bFAV}`;
+    } else {
+      bB = `${darB}${bdg}${darLine}${c.a ? `<p class="farb">${c.a}</p>` : ''}${proLine}${c.n ? `<p class="fnot">${c.n}</p>` : ''}${bFAV}`;
+    }
   } else {
-    fB = isA
-      ? `<div class="flbl">Darija · Arabe</div>${dot}${bdg}<p class="falp">${c.a}</p><p class="fdar">${c.d}</p><p class="fpro">[ ${c.p} ]</p>${bFAV}`
-      : `<div class="flbl">Darija · Arabe</div>${dot}${bdg}<p class="fdar">${c.d}</p>${c.a ? `<p class="farb">${c.a}</p>` : ''}<p class="fpro">[ ${c.p} ]</p>${bFAV}`;
+    if (isA) {
+      fB = `${darB}${dot}${bdg}<p class="falp">${c.a}</p>${alpLine}${proLine}${bFAV}`;
+    } else {
+      fB = `${darB}${dot}${bdg}${darLine}${c.a ? `<p class="farb">${c.a}</p>` : ''}${proLine}${bFAV}`;
+    }
     bB = `<div class="flbl">Français</div>${bdg}<p class="fmain${isA ? ' it' : ''}">${c.fr}</p>${c.n ? `<p class="fnot">${c.n}</p>` : ''}${bFAV}`;
   }
 
   ci.innerHTML = `<div class="face">${fB}</div><div class="face fb">${bB}</div>`;
   ci.style.transition = 'none'; ci.style.transform = fl ? 'rotateY(180deg)' : 'rotateY(0deg)'; ci.style.opacity = '1';
 
-  // Boutons favoris
   ci.querySelectorAll('.ffav').forEach(btn => {
     btn.addEventListener('pointerdown', e => e.stopPropagation(), { passive: false });
     btn.addEventListener('pointerup', e => e.stopPropagation(), { passive: false });
