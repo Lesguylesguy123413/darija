@@ -1,15 +1,18 @@
 // ============================================================
-// app.js [MODIFIABLE]
-// Contient : init, swipe, event bindings, modales, tabs
-// Dépend de : core.js, audio.js, render.js, data.js
+// app.js v9.1
+// Ajouts : bouton ج (arabeOnly), FAB mini-menu, édition catégories,
+//          catégorie intelligente (Claude API)
 // ============================================================
 
-// ── Swipe (isolé de #scene-btns pour ne pas bloquer micro/play) ──
+// ── arabeOnly state (lu par render.js) ──
+let arabeOnly = false;
+
+// ── Swipe ──
 ((() => {
   const sc = document.getElementById('sc');
   sc.addEventListener('pointerdown', e => {
     if (e.button && e.button !== 0) return;
-    if (e.target.closest('#scene-btns')) return; // laisser mic/play recevoir leurs clics
+    if (e.target.closest('#scene-btns')) return;
     ptX = e.clientX; ptY = e.clientY; ptDn = true; drg = false; drgCx = false; cdx = 0;
   }, { passive: true });
   sc.addEventListener('pointermove', e => {
@@ -44,7 +47,14 @@ document.getElementById('shufb').addEventListener('click', () => {
   rebuildPool(); cur = 0; fl = false; sd = rsd(); renderQuiz();
 });
 
-// ── Clavier (desktop) ──
+// ── Bouton ج (mode arabe uniquement) ──
+document.getElementById('arabe-btn').addEventListener('click', () => {
+  arabeOnly = !arabeOnly;
+  document.getElementById('arabe-btn').classList.toggle('on', arabeOnly);
+  renderQuiz();
+});
+
+// ── Clavier desktop ──
 document.addEventListener('keydown', e => {
   if (activeTab !== 'quiz') return;
   if (e.key === 'ArrowLeft') navC(-1);
@@ -58,16 +68,26 @@ document.addEventListener('keydown', e => {
 document.getElementById('btn-mic').addEventListener('click', () => toggleRec());
 document.getElementById('btn-play').addEventListener('click', () => togglePlay());
 
-// ── Cats toggle + ajouter catégorie ──
+// ── Cats toggle ──
 document.getElementById('cats-toggle-btn').addEventListener('click', () => {
   catsExpanded = !catsExpanded;
   const cats = document.getElementById('quiz-cats');
   cats.className = 'cats ' + (catsExpanded ? 'expanded' : 'collapsed');
   document.getElementById('cats-toggle-btn').textContent = catsExpanded ? '▲ Réduire' : '▼ Voir toutes';
 });
-document.getElementById('open-cat-mo').addEventListener('click', openCatMo);
 
-// ── Édition ──
+// ── FAB quiz → mini-menu ──
+const fabMenu = document.getElementById('fab-menu');
+document.getElementById('fab-quiz').addEventListener('click', e => {
+  e.stopPropagation();
+  fabMenu.classList.toggle('open');
+});
+document.addEventListener('click', () => fabMenu.classList.remove('open'));
+document.getElementById('fab-new-card').addEventListener('click', () => { fabMenu.classList.remove('open'); openAddCard(); });
+document.getElementById('fab-new-cat').addEventListener('click', () => { fabMenu.classList.remove('open'); openCatMo(); });
+document.getElementById('fab-smart-cat').addEventListener('click', () => { fabMenu.classList.remove('open'); openSmartCatMo(); });
+
+// ── Édition cartes ──
 document.getElementById('srch').addEventListener('input', e => { editSearch = e.target.value; renderEdit(); });
 
 function deleteCard(id) {
@@ -159,7 +179,6 @@ document.getElementById('cmo-cancel').onclick = closeCardMo;
 document.getElementById('cmo-close').onclick = closeCardMo;
 document.getElementById('cmo-del').onclick = () => { deleteCard(cmoEditId); closeCardMo(); };
 document.getElementById('card-mo').addEventListener('click', e => { if (e.target === document.getElementById('card-mo')) closeCardMo(); });
-document.getElementById('fab-quiz').onclick = openAddCard;
 
 // ── Ressources ──
 document.getElementById('res-edit-toggle').onclick = toggleResEdit;
@@ -234,7 +253,7 @@ document.getElementById('rmo-del').onclick = () => { deleteRes(rmoEditId); close
 document.getElementById('res-mo').addEventListener('click', e => { if (e.target === document.getElementById('res-mo')) closeResMo(); });
 document.getElementById('fab-res').onclick = openAddRes;
 
-// ── Modale catégorie ──
+// ── Modale catégorie (créer/gérer) ──
 const CAT_COLORS = [
   {bg:'#E2F5EF',c:'#2D6B4A'},{bg:'#FAF0E8',c:'#7A3B1A'},{bg:'#FDF4E0',c:'#7A5C1A'},
   {bg:'#F6ECF8',c:'#6B2D72'},{bg:'#FFF0F0',c:'#8C2020'},{bg:'#EAF4FF',c:'#1A4A7A'},
@@ -265,14 +284,19 @@ function openCatMo() {
 
 function renderCatList() {
   const list = document.getElementById('catmo-list');
-  if (!(S.customCats || []).length) { list.innerHTML = '<p style="font-size:10px;color:var(--muted);text-align:center;padding:.4rem 0">Aucune catégorie personnalisée</p>'; return; }
+  if (!(S.customCats || []).length) {
+    list.innerHTML = '<p style="font-size:10px;color:var(--muted);text-align:center;padding:.4rem 0">Aucune catégorie personnalisée</p>';
+    return;
+  }
   list.innerHTML = S.customCats.map(cc => `
     <div class="custom-cat-item">
       <div class="cci-dot" style="background:${cc.bg};border:.5px solid ${cc.c}"></div>
       <span class="cci-name">${cc.name}</span>
-      <button class="cci-del" data-ccid="${cc.id}">🗑</button>
+      <button class="cci-rename" data-ccid="${cc.id}" title="Renommer">✏️</button>
+      <button class="cci-del" data-ccid="${cc.id}" title="Supprimer">🗑</button>
     </div>`).join('');
-  list.querySelectorAll('.cci-del').forEach(btn => { btn.addEventListener('click', () => deleteCat(btn.dataset.ccid)); });
+  list.querySelectorAll('.cci-del').forEach(btn => btn.addEventListener('click', () => deleteCat(btn.dataset.ccid)));
+  list.querySelectorAll('.cci-rename').forEach(btn => btn.addEventListener('click', () => renameCatCustom(btn.dataset.ccid)));
 }
 
 function addCat() {
@@ -287,6 +311,14 @@ function addCat() {
   renderCatList(); renderQuiz(); renderEdit();
 }
 
+function renameCatCustom(id) {
+  const cc = (S.customCats || []).find(c => c.id === id); if (!cc) return;
+  const newName = prompt('Nouveau nom :', cc.name);
+  if (!newName || !newName.trim()) return;
+  cc.name = newName.trim();
+  saveState(); renderCatList(); renderQuiz(); renderEdit();
+}
+
 function deleteCat(id) {
   if (!confirm('Supprimer cette catégorie ? Les cartes associées iront dans "Autres".')) return;
   S.customCats = (S.customCats || []).filter(cc => cc.id !== id);
@@ -299,6 +331,136 @@ function closeCatMo() { document.getElementById('cat-mo').classList.remove('open
 document.getElementById('catmo-close').onclick = closeCatMo;
 document.getElementById('catmo-add').onclick = addCat;
 document.getElementById('cat-mo').addEventListener('click', e => { if (e.target === document.getElementById('cat-mo')) closeCatMo(); });
+
+// ── Édition catégories (onglet Édition — toutes les catégories) ──
+function openEditCatMo() {
+  renderEditCatList();
+  document.getElementById('edit-cat-mo').classList.add('open');
+}
+function closeEditCatMo() { document.getElementById('edit-cat-mo').classList.remove('open'); }
+
+function renderEditCatList() {
+  const all = allCards();
+  const cm = getCM();
+  let h = '';
+  for (const [k, v] of Object.entries(cm)) {
+    const cnt = all.filter(c => c.cat === k).length;
+    const isBase = !!CM[k];
+    h += `<div class="ec">
+      <div class="ec-body">
+        <div class="ec-fr" style="display:flex;align-items:center;gap:6px">
+          <span style="width:10px;height:10px;border-radius:50%;background:${v.bg};border:.5px solid ${v.c};display:inline-block;flex-shrink:0"></span>
+          ${v.l}
+          ${isBase
+            ? '<span class="ec-tag" style="background:rgba(26,16,8,.07);color:var(--muted)">Base</span>'
+            : '<span class="ec-tag" style="background:rgba(196,98,45,.1);color:var(--terra2)">Perso</span>'}
+        </div>
+        <div class="ec-d">${cnt} carte${cnt !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="ec-acts">
+        <button class="ea" onclick="renameCatFromEdit('${k}')">✏️</button>
+        ${!isBase ? `<button class="ea del" onclick="deleteCatFromEdit('${k}')">🗑</button>` : ''}
+      </div>
+    </div>`;
+  }
+  document.getElementById('edit-cat-list').innerHTML = h;
+}
+
+function renameCatFromEdit(id) {
+  const cm = getCM();
+  const v = cm[id]; if (!v) return;
+  const newName = prompt('Nouveau nom pour "' + v.l + '" :', v.l);
+  if (!newName || !newName.trim()) return;
+  if (!S.catRenames) S.catRenames = {};
+  S.catRenames[id] = newName.trim();
+  // Si c'est une catégorie custom, on met aussi à jour customCats
+  const cc = (S.customCats || []).find(c => c.id === id);
+  if (cc) cc.name = newName.trim();
+  saveState(); renderEditCatList(); renderQuiz(); renderEdit();
+}
+
+function deleteCatFromEdit(id) {
+  if (!confirm('Supprimer cette catégorie ? Les cartes associées iront dans "Autres".')) return;
+  S.customCats = (S.customCats || []).filter(cc => cc.id !== id);
+  S.custom = S.custom.map(c => c.cat === id ? { ...c, cat: 'autres' } : c);
+  if (S.af === id) S.af = 'all';
+  saveState(); renderEditCatList(); rebuildPool(); renderQuiz(); renderEdit();
+}
+
+document.getElementById('edit-cat-close').onclick = closeEditCatMo;
+document.getElementById('edit-cat-mo').addEventListener('click', e => { if (e.target === document.getElementById('edit-cat-mo')) closeEditCatMo(); });
+document.getElementById('edit-cats-btn').addEventListener('click', openEditCatMo);
+
+// ── Catégorie intelligente (API Claude) ──
+function openSmartCatMo() {
+  document.getElementById('scat-name').value = '';
+  document.getElementById('scat-keyword').value = '';
+  document.getElementById('scat-status').textContent = '';
+  document.getElementById('scat-generate').disabled = false;
+  document.getElementById('smart-cat-mo').classList.add('open');
+  setTimeout(() => document.getElementById('scat-name').focus(), 120);
+}
+function closeSmartCatMo() { document.getElementById('smart-cat-mo').classList.remove('open'); }
+document.getElementById('scat-close').onclick = closeSmartCatMo;
+document.getElementById('smart-cat-mo').addEventListener('click', e => { if (e.target === document.getElementById('smart-cat-mo')) closeSmartCatMo(); });
+
+document.getElementById('scat-generate').addEventListener('click', async () => {
+  const name = document.getElementById('scat-name').value.trim();
+  const keyword = document.getElementById('scat-keyword').value.trim();
+  const statusEl = document.getElementById('scat-status');
+  if (!name || !keyword) { statusEl.textContent = '⚠️ Remplis les deux champs.'; return; }
+
+  statusEl.textContent = '⏳ Génération en cours…';
+  document.getElementById('scat-generate').disabled = true;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        messages: [{
+          role: 'user',
+          content: `Tu es un expert en darija marocain. Génère exactement 50 cartes de vocabulaire sur le thème "${keyword}" pour quelqu'un qui visite Fès au Maroc.
+
+Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun autre texte ni balise markdown. Format strict :
+[{"fr":"...","d":"...","a":"...","p":"...","n":"..."}]
+
+Règles :
+- 50 entrées exactement
+- Darija marocain (pas arabe classique)
+- Translittération : 7=ح, 3=ع, 9=ق
+- Phrases courtes et utiles au quotidien
+- n = note ou contexte (peut être vide "")`,
+        }],
+      })
+    });
+
+    if (!res.ok) throw new Error('Erreur API (' + res.status + ')');
+    const data = await res.json();
+    const text = data.content?.find(b => b.type === 'text')?.text || '';
+    const match = text.match(/\[[\s\S]
+    if (!match) throw new Error('Format JSON invalide');
+    const cards = JSON.parse(match[0]);
+    if (!Array.isArray(cards) || !cards.length) throw new Error('Aucune carte générée');
+
+    const col = CAT_COLORS[Math.floor(Math.random() * CAT_COLORS.length)];
+    const catId = 'cc_' + Date.now();
+    if (!S.customCats) S.customCats = [];
+    S.customCats.push({ id: catId, name, bg: col.bg, c: col.c });
+    cards.forEach(card => {
+      S.custom.push({ id: nextCustomId++, cat: catId, fr: card.fr || '', d: card.d || '', a: card.a || '', p: card.p || '', n: card.n || '', custom: true });
+    });
+
+    saveState(); rebuildPool(); renderQuiz(); renderEdit();
+    statusEl.textContent = `✅ ${cards.length} cartes créées dans "${name}" !`;
+    setTimeout(closeSmartCatMo, 1800);
+  } catch(err) {
+    statusEl.textContent = '❌ ' + err.message;
+    document.getElementById('scat-generate').disabled = false;
+  }
+});
 
 // ── Modale sync ──
 function closeSyncMo() { document.getElementById('sync-mo').classList.remove('open'); }
@@ -330,6 +492,7 @@ loadState();
 loadRecs();
 if (!S.knows) S.knows = [];
 if (!S.customCats) S.customCats = [];
+if (!S.catRenames) S.catRenames = {};
 rebuildPool();
 if (cur >= pool.length) cur = 0;
 sd = rsd();
